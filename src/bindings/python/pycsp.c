@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <csp/drivers/usart.h>
 #include <csp/drivers/can_socketcan.h>
 #include <csp/csp_endian.h>
+#include <csp/arch/csp_malloc.h>
 
 #define SOCKET_CAPSULE      "csp_socket_t"
 #define CONNECTION_CAPSULE  "csp_conn_t"
@@ -546,6 +547,56 @@ static PyObject* pycsp_xtea_set_key(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+static PyObject* pycsp_csp_sfp_send(PyObject *self, PyObject *args) {
+    PyObject* conn_capsule;
+    const void * data;
+    unsigned int datasize;
+    unsigned int mtu;
+    uint32_t timeout = 1000;
+
+    int res;
+
+    if (!PyArg_ParseTuple(args, "Oy*II|b", &conn_capsule, &data, &datasize, &mtu, &timeout)) {
+        return NULL; // TypeError is thrown
+    }
+
+    csp_conn_t* conn = get_obj_as_conn(conn_capsule, false);
+    if (conn == NULL) {
+        return NULL;
+    }
+
+    res = csp_sfp_send(conn, data, datasize, mtu, timeout);
+
+    return Py_BuildValue("i", res);
+}
+
+static PyObject* pycsp_csp_sfp_recv(PyObject *self, PyObject *args) {
+    PyObject* conn_capsule;
+    uint32_t timeout = 1000;
+    uint8_t *buffer;
+    int datasize;
+    int res;
+
+    if (!PyArg_ParseTuple(args, "O|b", &conn_capsule, &timeout)) {
+        return NULL; // TypeError is thrown
+    }
+
+    csp_conn_t* conn = get_obj_as_conn(conn_capsule, false);
+    if (conn == NULL) {
+        return NULL;
+    }
+
+    res = csp_sfp_recv(conn, (void**)&buffer, &datasize, timeout);
+
+    if( res == CSP_ERR_NONE ) {
+        PyObject* ret = Py_BuildValue("y#", buffer, datasize);
+        csp_free(buffer);
+        return ret;
+    } else {
+        Py_RETURN_NONE;
+    }
+}
+
 static PyObject* pycsp_rtable_set(PyObject *self, PyObject *args) {
     uint8_t node;
     uint8_t mask;
@@ -926,6 +977,8 @@ static PyMethodDef methods[] = {
     {"rdp_set_opt",         pycsp_rdp_set_opt,         METH_VARARGS, ""},
     {"rdp_get_opt",         pycsp_rdp_get_opt,         METH_NOARGS,  ""},
     {"xtea_set_key",        pycsp_xtea_set_key,        METH_VARARGS, ""},
+    {"csp_sfp_send",        pycsp_csp_sfp_send,        METH_VARARGS, ""},
+    {"csp_sfp_recv",        pycsp_csp_sfp_recv,        METH_VARARGS, ""},
 
     /* csp/csp_rtable.h */
     {"rtable_set",          pycsp_rtable_set,          METH_VARARGS, ""},
