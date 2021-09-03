@@ -556,7 +556,7 @@ static PyObject* pycsp_csp_sfp_send(PyObject *self, PyObject *args) {
 
     int res;
 
-    if (!PyArg_ParseTuple(args, "Oy*II|b", &conn_capsule, &data, &datasize, &mtu, &timeout)) {
+    if (!PyArg_ParseTuple(args, "Oy#I|I", &conn_capsule, &data, &datasize, &mtu, &timeout)) {
         return NULL; // TypeError is thrown
     }
 
@@ -577,7 +577,7 @@ static PyObject* pycsp_csp_sfp_recv(PyObject *self, PyObject *args) {
     int datasize;
     int res;
 
-    if (!PyArg_ParseTuple(args, "O|b", &conn_capsule, &timeout)) {
+    if (!PyArg_ParseTuple(args, "O|I", &conn_capsule, &timeout)) {
         return NULL; // TypeError is thrown
     }
 
@@ -977,8 +977,8 @@ static PyMethodDef methods[] = {
     {"rdp_set_opt",         pycsp_rdp_set_opt,         METH_VARARGS, ""},
     {"rdp_get_opt",         pycsp_rdp_get_opt,         METH_NOARGS,  ""},
     {"xtea_set_key",        pycsp_xtea_set_key,        METH_VARARGS, ""},
-    {"csp_sfp_send",        pycsp_csp_sfp_send,        METH_VARARGS, ""},
-    {"csp_sfp_recv",        pycsp_csp_sfp_recv,        METH_VARARGS, ""},
+    {"sfp_send",        pycsp_csp_sfp_send,        METH_VARARGS, ""},
+    {"sfp_recv",        pycsp_csp_sfp_recv,        METH_VARARGS, ""},
 
     /* csp/csp_rtable.h */
     {"rtable_set",          pycsp_rtable_set,          METH_VARARGS, ""},
