@@ -947,6 +947,41 @@ static PyObject* pycsp_get_buffer_stats(PyObject *self, PyObject *args) {
     return Py_BuildValue("iii", (int)csp_buffer_remaining(), (int)csp_buffer_size(), (int)csp_buffer_data_size());
 }
 
+#ifdef _CSP_CSP_PROMISC_H_
+static PyObject* pycsp_promisc_enable(PyObject *self, PyObject *args) {
+    int queue_size;
+    int ret;
+    if (!PyArg_ParseTuple(args, "I", &queue_size)) {
+        return NULL; // TypeError is thrown
+    }
+
+    ret = csp_promisc_enable(queue_size);
+
+    return Py_BuildValue("I", ret);
+}
+
+static PyObject* pycsp_promisc_disable(PyObject *self, PyObject *args) {
+    csp_promisc_disable();
+    Py_RETURN_NONE;
+}
+
+static PyObject* pycsp_promisc_read(PyObject *self, PyObject *args) {
+    uint32_t timeout = 1000;
+    csp_packet_t * packet;
+    if (!PyArg_ParseTuple(args, "|I", &timeout)) {
+        return NULL; // TypeError is thrown
+    }
+
+    packet = csp_promisc_read(timeout);
+
+    if (packet == NULL) {
+        Py_RETURN_NONE; // timeout -> None
+    }
+
+    return PyCapsule_New(packet, PACKET_CAPSULE, pycsp_free_csp_buffer);
+}
+#endif
+
 static PyMethodDef methods[] = {
 
     /* csp/csp.h */
@@ -1013,6 +1048,12 @@ static PyMethodDef methods[] = {
     {"print_connections",   pycsp_print_connections,   METH_NOARGS,  ""},
     {"print_routes",        pycsp_print_routes,        METH_NOARGS,  ""},
     {"get_buffer_stats",    pycsp_get_buffer_stats,    METH_NOARGS,  ""},
+
+#ifdef _CSP_CSP_PROMISC_H_
+    {"promisc_enable",      pycsp_promisc_enable,      METH_NOARGS,  ""},
+    {"promisc_disable",     pycsp_promisc_disable,     METH_NOARGS,  ""},
+    {"promisc_read",        pycsp_promisc_read,        METH_NOARGS,  ""},
+#endif
 
     /* sentinel */
     {NULL, NULL, 0, NULL}
