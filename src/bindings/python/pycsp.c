@@ -1050,9 +1050,9 @@ static PyMethodDef methods[] = {
     {"get_buffer_stats",    pycsp_get_buffer_stats,    METH_NOARGS,  ""},
 
 #ifdef _CSP_CSP_PROMISC_H_
-    {"promisc_enable",      pycsp_promisc_enable,      METH_NOARGS,  ""},
+    {"promisc_enable",      pycsp_promisc_enable,      METH_VARARGS,  ""},
     {"promisc_disable",     pycsp_promisc_disable,     METH_NOARGS,  ""},
-    {"promisc_read",        pycsp_promisc_read,        METH_NOARGS,  ""},
+    {"promisc_read",        pycsp_promisc_read,        METH_VARARGS,  ""},
 #endif
 
     /* sentinel */
