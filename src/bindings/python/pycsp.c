@@ -929,6 +929,20 @@ static PyObject* pycsp_packet_get_length(PyObject *self, PyObject *packet_capsul
     return Py_BuildValue("H", packet->length);
 }
 
+static PyObject* pycsp_packet_get_id(PyObject *self, PyObject *packet_capsule) {
+    csp_packet_t * packet = get_obj_as_packet(packet_capsule, false);
+    if (packet == NULL) {
+        return NULL; // TypeError is thrown
+    }
+    return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i}",
+        "pri", packet->id.pri,
+        "src", packet->id.src,
+        "dst", packet->id.dst,
+        "dport", packet->id.dport,
+        "sport", packet->id.sport,
+        "flags", packet->id.flags);
+}
+
 static PyObject* pycsp_print_connections(PyObject *self, PyObject *args) {
 #if (CSP_DEBUG)
     csp_conn_print_table();
@@ -1044,6 +1058,7 @@ static PyMethodDef methods[] = {
     /* helpers */
     {"packet_get_length",   pycsp_packet_get_length,   METH_O,       ""},
     {"packet_get_data",     pycsp_packet_get_data,     METH_O,       ""},
+    {"packet_get_id",       pycsp_packet_get_id,       METH_O,       ""},
     {"packet_set_data",     pycsp_packet_set_data,     METH_VARARGS, ""},
     {"print_connections",   pycsp_print_connections,   METH_NOARGS,  ""},
     {"print_routes",        pycsp_print_routes,        METH_NOARGS,  ""},
