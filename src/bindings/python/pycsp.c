@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <csp/drivers/can_socketcan.h>
 #include <csp/csp_endian.h>
 #include <csp/arch/csp_malloc.h>
+#include "../../csp_io.h"
 
 #define SOCKET_CAPSULE      "csp_socket_t"
 #define CONNECTION_CAPSULE  "csp_conn_t"
@@ -245,6 +246,33 @@ static PyObject* pycsp_send(PyObject *self, PyObject *args) {
     Py_END_ALLOW_THREADS;
     if (res != 1) {
         return PyErr_Error("csp_send()", res);
+    }
+    PyCapsule_SetPointer(packet_capsule, &CSP_POINTER_HAS_BEEN_FREED);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject* pycsp_send_direct(PyObject *self, PyObject *args) {
+    uint32_t header;
+    
+    PyObject* packet_capsule;
+    uint32_t timeout = 1000;
+    if (!PyArg_ParseTuple(args, "IO|I", &header, &packet_capsule, &timeout)) {
+        return NULL; // TypeError is thrown
+
+    }
+    csp_packet_t* packet = get_obj_as_packet(packet_capsule, false);
+    if (packet == NULL) {
+        return NULL;
+    }
+    csp_id_t hdr;
+    hdr.ext = header;
+    int res;
+    Py_BEGIN_ALLOW_THREADS;
+    res = csp_send_direct(hdr, packet, csp_rtable_find_route(hdr.dst), timeout);
+    Py_END_ALLOW_THREADS;
+    if (res != 0) {
+        return PyErr_Error("csp_send_direct()", res);
     }
     PyCapsule_SetPointer(packet_capsule, &CSP_POINTER_HAS_BEEN_FREED);
 
@@ -934,13 +962,14 @@ static PyObject* pycsp_packet_get_id(PyObject *self, PyObject *packet_capsule) {
     if (packet == NULL) {
         return NULL; // TypeError is thrown
     }
-    return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i}",
+    return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
         "pri", packet->id.pri,
         "src", packet->id.src,
         "dst", packet->id.dst,
         "dport", packet->id.dport,
         "sport", packet->id.sport,
-        "flags", packet->id.flags);
+        "flags", packet->id.flags,
+        "raw", packet->id);
 }
 
 static PyObject* pycsp_print_connections(PyObject *self, PyObject *args) {
@@ -1008,6 +1037,7 @@ static PyMethodDef methods[] = {
     {"accept",              pycsp_accept,              METH_VARARGS, ""},
     {"read",                pycsp_read,                METH_VARARGS, ""},
     {"send",                pycsp_send,                METH_VARARGS, ""},
+    {"send_direct",         pycsp_send_direct,         METH_VARARGS, ""},
     {"transaction",         pycsp_transaction,         METH_VARARGS, ""},
     {"sendto_reply",        pycsp_sendto_reply,        METH_VARARGS, ""},
     {"sendto",              pycsp_sendto,              METH_VARARGS, ""},
